@@ -1,6 +1,7 @@
 
 import random
 import requests
+import time
 
 from memo import memoize
 
@@ -77,9 +78,9 @@ class WikiAPI(object):
             node = next(iter(result['pages'].values()))
             # if there isnt any links like can happen exit the gen loop.
             if not params["prop"] in node:
-                print("Title Error: Page missing results? '%s'" % title)
-                # TODO: this could mean page has no links.
-                raise StopIteration
+                print("Page missing results? '%s'" % title)
+                # Page has no results so exit the generator to yeild nothing
+                return
             links = [n["title"] for n in node[params["prop"]]]
             # shuffle to stop the results being completely aphabetical.
             random.shuffle(links)
@@ -107,7 +108,7 @@ class WikiAPI(object):
             # of the last result.
             req.update(lastContinue)
             # Call API
-            result = requests.get(API_URL, params=req, headers=headers).json()
+            result = self._fetch_result(req)
             if 'error' in result:
                 raise Error(result['error'])
             if 'warnings' in result:
@@ -118,3 +119,22 @@ class WikiAPI(object):
             if 'continue' not in result:
                 break
             lastContinue = result['continue']
+
+    def _fetch_result(self, params, pause=3, limit=3):
+        '''Wrapper around requests to stop instant failure in case of 
+        requests.exceptions.ConnectionError. function retries connection
+        for a given limit of retries. If connection cannot be established
+        original error is thrown.'''
+        attempts = 0
+        while True:
+            try:
+                return requests.get(API_URL, params=params, headers=headers).json()
+            except requests.exceptions.ConnectionError as e:
+                # We couldnt connect, wait a few seconds...
+                attempts += 1
+                if attempts < limit:
+                    print(e.__class__.__name__, "Waiting to reconnect...")
+                    time.sleep(pause)
+                else:
+                    raise requests.exceptions.ConnectionError
+

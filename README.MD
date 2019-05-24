@@ -7,7 +7,7 @@ The file `wikigraph.py` implements classes for finding paths between wikipedia a
 install requiremnts
 
 ```
-python findpath --start="Tom Hanks" --end="Karl Marx"
+python findpath.py --start="Car" --end="Home"
 ```
 
 ### Example session:

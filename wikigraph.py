@@ -182,6 +182,12 @@ class Path(object):
         return "<%s.%s: %s>" % (self.__class__.__module__,
                                 self.__class__.__name__,
                                 " -> ".join(self.path))
+    
+    __repr__ = __str__
+
+    def __len__(self):
+        "return the degree (the path len)"
+        return self.degree
 
     @property
     def info(self):

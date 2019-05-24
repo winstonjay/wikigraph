@@ -13,9 +13,7 @@ def memoize(f):
     cache = {}
     def _f(*args):
         try:
-            res = cache[args[1:]]
-            # print("cache:", args[1:])
-            return res
+            return cache[args[1:]]
         except KeyError:
             cache[args[1:]] = result = list(f(*args))
             return result
