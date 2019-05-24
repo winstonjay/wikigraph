@@ -18,21 +18,21 @@ default = {
 }
 
 # for searching forwards.
-left_params = {
+outbound_params = {
     "prop": "links",
     "plnamespace": 0,
     "pllimit": "max"
 }
-left_params.update(default)
+outbound_params.update(default)
 
 # for searching backwards.
-right_params = {
+inbound_params = {
     "prop": "linkshere",
     "lhnamespace": 0,
     "lhlimit": "max",
     "lhprop": "title"
 }
-right_params.update(default)
+inbound_params.update(default)
 
 
 class WikiAPI(object):
@@ -42,18 +42,18 @@ class WikiAPI(object):
     '''
     def __init__(self, print_requests=False):
         self.print_requests = print_requests
-        self.requests_fwd = 0
-        self.requests_bwk = 0
-        self.left_params  = left_params
-        self.right_params = right_params
+        self.outbound_requests = 0
+        self.inbound_requests = 0
+        self.outbound_params  = outbound_params
+        self.inbound_params = inbound_params
 
-    def links(self, title, inbound=True):
+    def links(self, title, inbound=False):
         '''
         For a given article return a list of links to or from it based
         on if kwarg inbound is set to True or False. These correspond to
         the "linkshere" or "links" properties of the WikiMedia api.
         '''
-        return list(self.page_links(title, False))
+        return list(self.page_links(title, inbound))
 
     def random_sample(self, n=1):
         '''
@@ -66,12 +66,12 @@ class WikiAPI(object):
         return [page['title'] for page in request['query']['random']]
 
     @memoize
-    def page_links(self, title, is_forward):
+    def page_links(self, title, inbound):
         '''
         Make a request to the Wikipedia API using the given search
         parameters. Returns a parsed dict of the JSON response.
         '''
-        params = (left_params if is_forward else right_params)
+        params = (inbound_params if inbound else outbound_params)
         params["titles"] = title
         # iteraterate through the results of our query.
         for result in self._query(params):
@@ -96,10 +96,11 @@ class WikiAPI(object):
         '''
         lastContinue = {}
         while True:
+            # Balancing requests between forward and 
             if request["prop"] == 'links':
-                self.requests_fwd += 1
+                self.outbound_requests += 1
             else:
-                self.requests_bwk += 1
+                self.inbound_requests += 1
             # Clone original request
             req = request.copy()
             if self.print_requests:

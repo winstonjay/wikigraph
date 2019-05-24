@@ -1,6 +1,7 @@
 import unittest
 
 from wikigraph import WikiGraph
+from wikiapi import WikiAPI
 
 top10pages = '''\
 United States
@@ -64,9 +65,14 @@ class TestWikiGraph(unittest.TestCase):
 
 
 
+class TestWikiAPI(unittest.TestCase):
 
-
-
+    def test_get_links(self):
+        api = WikiAPI()
+        links = api.links('Bee', inbound=False)
+        self.assertGreater(len(links), 100)
+        linkshere = api.links('Bee', inbound=True)
+        self.assertGreater(len(linkshere), 100)
 
 
 if __name__ == '__main__':

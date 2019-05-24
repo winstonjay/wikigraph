@@ -75,18 +75,18 @@ class WikiGraph(WikiAPI):
     def find_path(self, start, end):
         '''Find a valid path between 2 given wikipedia articles
         and return a Path object.'''
-        self.requests_fwd = 0
-        self.requests_bwk = 0
+        self.outbound_requests = 0
+        self.inbound_requests = 0
         t1 = datetime.now()
         return Path(start=start, end=end,
                     path=self._bidirectional_search(start, end, self.page_links),
                     time=(datetime.now() - t1).total_seconds(),
-                    requests=self.requests_fwd + self.requests_bwk)
+                    requests=self.outbound_requests + self.inbound_requests)
 
     def indegree(self, title):
         '''return the number of links to a given article. This corresponds
         to using the "linkshere" property of the WikiMedia api.'''
-        params = self.right_params
+        params = self.inbound_params
         params["titles"] = title
         # iterate through requests and get a cumsum.
         total = 0
@@ -109,13 +109,13 @@ class WikiGraph(WikiAPI):
         if start == end:
             return [start]
         found_paths = []
-        l_explored, l_front = set(), deque([[start]])
-        r_explored, r_front = set(), deque([[end]])
+        l_explored, l_front = set(), deque([[start]]) # outbound links
+        r_explored, r_front = set(), deque([[end]])   # inbound links
         while l_front and r_front:
             # -> Advance forwards from start.
-            if self.requests_fwd < self.requests_bwk and l_front:
+            if self.outbound_requests < self.inbound_requests and l_front:
                 path = l_front.popleft()
-                for state in successors(path[-1], True):
+                for state in successors(path[-1], False):
                     if state in l_explored:
                         # ignore the already explored
                         continue
@@ -130,7 +130,7 @@ class WikiGraph(WikiAPI):
             elif r_front:
                 # <- Advance backwards from end.
                 path = r_front.popleft()
-                for state in successors(path[-1], False):
+                for state in successors(path[-1], True):
                     if state in r_explored:
                         # ignore the already explored.
                         continue
